@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include <cassert>
-
 namespace vmc {
 	VmcPipeline::VmcPipeline(VmcDevice& device, const std::string& vertFilePath, const std::string& fragFilePath, const PipelineConfigInfo& configInfo) : vmcDevice{ device } {
 		createGraphicsPipeline(vertFilePath, fragFilePath, configInfo);
@@ -14,6 +13,7 @@ namespace vmc {
 		vkDestroyShaderModule(vmcDevice.device(), fragShaderModule, nullptr);
 		vkDestroyPipeline(vmcDevice.device(), graphicsPipeline, nullptr);
 	}
+
 	std::vector<char> VmcPipeline::readFile(const std::string& filePath) {
 		std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 		if (!file.is_open()) {
@@ -151,7 +151,7 @@ namespace vmc {
 		configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE;  // Optional
 		configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;       // Optional
 
-		VkPipelineColorBlendAttachmentState blend{};
+		static VkPipelineColorBlendAttachmentState blend{};
 		blend.colorWriteMask =
 			VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
 			VK_COLOR_COMPONENT_A_BIT;

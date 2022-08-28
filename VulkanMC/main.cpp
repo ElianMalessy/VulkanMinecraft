@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
-#include <utility>
 int main()
 {
 	vmc::App app{};

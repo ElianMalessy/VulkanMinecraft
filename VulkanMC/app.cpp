@@ -1,12 +1,20 @@
 #include "app.hpp"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+
 #include <stdexcept>
 #include <array>
 #include <math.h>
 #include <iostream>
 namespace vmc {
-	App* app;
+	struct simplePushConstantData {
+		glm::vec2 offset;
+		glm::vec3 color;
+	};
 
+	App* app;
 	App::App() {
 		loadModels();
 		createPipelineLayout();
@@ -16,6 +24,7 @@ namespace vmc {
 	}
 
 	App::~App() {
+		app = nullptr;
 		vkDestroyPipelineLayout(vmcDevice.device(), pipelineLayout, nullptr);
 	}
 
@@ -28,6 +37,7 @@ namespace vmc {
 		vkDeviceWaitIdle(vmcDevice.device());
 	}
 
+	// draw frame while glfwPollEvents has paused so that we keep drawing as we resize the window
 	void App::windowRefreshCallback(GLFWwindow* window) {
 		app->drawFrame();
 	}
@@ -35,50 +45,38 @@ namespace vmc {
 	inline float height(float sidelength) {
 		return static_cast<float>(sidelength * sqrt(3) / 2);
 	}
-	void sterpinsky(glm::vec2 top, glm::vec2 left, glm::vec2 right, int depth, std::vector<VmcModel::Vertex>& vertices) {
-		if (depth <= 0) {
-			vertices.push_back({ top, {1.0f, 1.0f, 0.0f } });
-			vertices.push_back({ right, {1.0f, 0.0f, 0.0f } });
-			vertices.push_back({ left, {1.0f, 0.0f, 1.0f } });
-		}
-		else {
-
-			glm::vec2 topLeft = 0.5f * (left + top);
-			glm::vec2 mid = 0.5f * (left + right);
-			glm::vec2 topRight = 0.5f * (right + top);
-
-
-			sterpinsky(topLeft, left, mid, depth - 1, vertices);
-			sterpinsky(topRight, mid, right, depth - 1, vertices);
-			sterpinsky(top, topLeft, topRight, depth - 1, vertices);
-		}
-	}
-	constexpr float sidelength = 0.9f;
+	constexpr float sidelength = 0.5f;
 	constexpr float midpoint = 0.0f;
 	void App::loadModels() {
 		glm::vec2 top = { midpoint, -height(sidelength) };
 		glm::vec2 left = { midpoint - sidelength, height(sidelength) };
 		glm::vec2 right = { midpoint + sidelength, height(sidelength) };
-		std::vector<VmcModel::Vertex> vertices;
-
-		sterpinsky(top, left, right, 3, vertices);
+		std::vector<VmcModel::Vertex> vertices = { {top}, {left}, {right} };
 
 		vmcModel = std::make_unique<VmcModel>(vmcDevice, vertices);
 	}
 
 	void App::createPipelineLayout() {
+		VkPushConstantRange pushConstantRange{};
+		pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		pushConstantRange.offset = 0;
+		pushConstantRange.size = sizeof(simplePushConstantData);
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 0;
 		pipelineLayoutInfo.pSetLayouts = nullptr;
-		pipelineLayoutInfo.pushConstantRangeCount = 0;
-		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 		if (vkCreatePipelineLayout(vmcDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout");
 		}
 	}
 
 	void App::createPipeline() {
+		assert(vmcSwapChain != nullptr && "Cannot create pipeline before swap chain");
+		assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
+
 		PipelineConfigInfo pipelineConfig{};
 		VmcPipeline::defaultPipelineConfigInfo(pipelineConfig);
 		pipelineConfig.renderPass = vmcSwapChain->getRenderPass();
@@ -95,9 +93,21 @@ namespace vmc {
 			glfwWaitEvents();
 		}
 
-		// wait until the current swapchain isnt being used until we create the new one
+		// wait until the current swapchain isnt being used until we create the new one or also scavenge the old one for resources
 		vkDeviceWaitIdle(vmcDevice.device());
-		vmcSwapChain = std::make_unique<VmcSwapChain>(vmcDevice, extent);
+
+		if (vmcSwapChain == nullptr) {
+			vmcSwapChain = std::make_unique<VmcSwapChain>(vmcDevice, extent);
+		}
+		else {
+			vmcSwapChain = std::make_unique<VmcSwapChain>(vmcDevice, extent, std::move(vmcSwapChain));
+			if (vmcSwapChain->imageCount() != commandBuffers.size()) {
+				freeCommandBuffers();
+				createCommandBuffers();
+			}
+		}
+
+		// if render passes are compatible then we don't need to recreate the pipeline
 		createPipeline();
 	}
 
@@ -118,6 +128,11 @@ namespace vmc {
 		}
 	}
 
+	void App::freeCommandBuffers() {
+		vkFreeCommandBuffers(vmcDevice.device(), vmcDevice.getCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+		commandBuffers.clear();
+	}
+
 	void App::recordCommandBuffer(int imageIndex) {
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -126,6 +141,7 @@ namespace vmc {
 			throw std::runtime_error("failed to begin recording command buffer");
 		}
 
+		// A blueprint that tells the graphics pipeline what layout to expect for an output framebuffer + other instructions
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = vmcSwapChain->getRenderPass();
@@ -146,10 +162,31 @@ namespace vmc {
 		// no secondary command buffers will be used
 		vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+		// dynamically set the viewport and put it in the command buffer. 
+		// we will always be using the correct window size even if the swapchain changes
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(vmcSwapChain->getSwapChainExtent().width);
+		viewport.height = static_cast<float>(vmcSwapChain->getSwapChainExtent().height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		VkRect2D scissor{ {0, 0}, vmcSwapChain->getSwapChainExtent() };
+		vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+		vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+
 		// draw 3 vertices and 1 instance. An instance can be reused to draw copies with the same vertex data
 		vmcPipeline->bind(commandBuffers[imageIndex]);
 		vmcModel->bind(commandBuffers[imageIndex]);
-		vmcModel->draw(commandBuffers[imageIndex]);
+		for (int i = 0; i < 4; i++) {
+			simplePushConstantData push{};
+			push.offset = { 0.0f, -0.4f + i * 0.25f };
+			push.color = { 0.0f, 0.0f, 0.2f + i * 0.2f };
+
+			vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(simplePushConstantData), &push);
+			vmcModel->draw(commandBuffers[imageIndex]);
+		}
+
 
 		vkCmdEndRenderPass(commandBuffers[imageIndex]);
 		if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {

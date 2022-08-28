@@ -26,12 +26,13 @@ namespace vmc {
 		void drawFrame();
 	private:
 		static void windowRefreshCallback(GLFWwindow* window);
-
 		VmcWindow vmcWindow{ WIDTH, HEIGHT, "Hello Vulkan", &windowRefreshCallback };
+
 		void loadModels();
 		void createPipelineLayout();
 		void createPipeline();
 		void createCommandBuffers();
+		void freeCommandBuffers();
 		void recreateSwapChain();
 		void recordCommandBuffer(int imageIndex);
 

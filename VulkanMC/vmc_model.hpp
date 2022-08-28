@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 
 #include <vector>
-
 namespace vmc {
 	class VmcModel {
 		// takes vertex data from the cpu and allocates memory and copies it over to the gpu
