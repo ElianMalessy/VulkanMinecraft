@@ -67,12 +67,13 @@ namespace vmc {
 		vmcPipeline->bind(commandBuffer);
 
 		for (auto& entity : entities) {
-			//entity.transform2d.rotation = entity.calculateGravity();
 			auto& circle = gCoordinator.GetComponent<Circle>(entity);
 			auto& transform = gCoordinator.GetComponent<Transform>(entity);
 			auto const& gravity = gCoordinator.GetComponent<Gravity>(entity);
 
+
 			simplePushConstantData push{};
+			//std::cout << transform.translation.x << " ";
 			push.offset = transform.translation;
 			push.color = circle.color;
 			push.transform = transform.mat2();

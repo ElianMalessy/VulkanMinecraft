@@ -68,7 +68,7 @@ namespace vmc {
 
 	struct Gravity
 	{
-		glm::vec2 force;
+		glm::vec2 force{ 2.0f, 0.0f };
 	};
 
 	struct Transform {

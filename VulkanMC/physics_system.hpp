@@ -2,20 +2,23 @@
 
 #include "system.hpp"
 #include "coordinator.hpp"
-
+#include <iostream>
 namespace vmc {
-	void System::Update(float dt, Coordinator& gCoordinator)
-	{
-		for (auto const& entity : mEntities)
+	class PhysicsSystem : public System {
+	public:
+
+		void Update(float dt, Coordinator& coordinator)
 		{
-			auto& circle = gCoordinator.GetComponent<Circle>(entity);
-			auto& transform = gCoordinator.GetComponent<Transform>(entity);
-			auto const& gravity = gCoordinator.GetComponent<Gravity>(entity);
+			for (auto const& entity : mEntities)
+			{
+				auto& circle = coordinator.GetComponent<Circle>(entity);
+				auto& transform = coordinator.GetComponent<Transform>(entity);
+				auto const& gravity = coordinator.GetComponent<Gravity>(entity);
 
-			transform.translation += circle.velocity * dt;
-
-			circle.velocity += gravity.force * dt;
-		}
+				transform.translation += circle.velocity * dt;
+				circle.velocity += gravity.force * dt;
+			}
+		};
 		/*
 void circleCollision(Circle circle) {
 	float cmbRad = this->radius + circle.radius;

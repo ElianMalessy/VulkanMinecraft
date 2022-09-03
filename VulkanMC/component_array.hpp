@@ -25,7 +25,6 @@ namespace vmc {
 			assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() && "Component added to same entity more than once.");
 
 			// Put new entry at end and update the maps
-			std::cout << typeid(std::move(component)).name();
 			size_t newIndex = mSize;
 			mEntityToIndexMap[entity] = newIndex;
 			mIndexToEntityMap[newIndex] = entity;

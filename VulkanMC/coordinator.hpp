@@ -4,6 +4,7 @@
 #include "component_array.hpp"
 #include "entity_manager.hpp"
 #include "system_manager.hpp"
+#include <iostream>
 namespace vmc {
 	class Coordinator
 	{
