@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vmc_window.hpp"
-
+#include <vma/vk_mem_alloc.h>
 // std lib headers
 #include <string>
 #include <vector>
@@ -9,7 +9,7 @@
 namespace vmc {
 
 	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
+		VkSurfaceCapabilitiesKHR capabilities{};
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 	};
@@ -52,12 +52,8 @@ namespace vmc {
 			const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 		// Buffer Helper Functions
-		void createBuffer(
-			VkDeviceSize size,
-			VkBufferUsageFlags usage,
-			VkMemoryPropertyFlags properties,
-			VkBuffer& buffer,
-			VkDeviceMemory& bufferMemory);
+		void createDeviceBuffer(VkDeviceSize size, void* data, VkBufferUsageFlags usage, VkBuffer* buffer, VmaAllocation* bufferMemory);
+
 		VkCommandBuffer beginSingleTimeCommands();
 		void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 		void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -71,13 +67,14 @@ namespace vmc {
 			VkDeviceMemory& imageMemory);
 
 		VkPhysicalDeviceProperties properties;
-
+		VmaAllocator vmaAllocator;
 	private:
 		void createInstance();
 		void setupDebugMessenger();
 		void createSurface();
 		void pickPhysicalDevice();
 		void createLogicalDevice();
+		void createAllocator();
 		void createCommandPool();
 
 		// helper functions

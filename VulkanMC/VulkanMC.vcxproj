@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -158,17 +158,29 @@
   <ItemGroup>
     <ClCompile Include="app.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="simple_render_system.cpp" />
     <ClCompile Include="vmc_device.cpp" />
     <ClCompile Include="vmc_model.cpp" />
     <ClCompile Include="vmc_pipeline.cpp" />
+    <ClCompile Include="vmc_renderer.cpp" />
     <ClCompile Include="vmc_swap_chain.cpp" />
     <ClCompile Include="vmc_window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
+    <ClInclude Include="coordinator.hpp" />
+    <ClInclude Include="entity_manager.hpp" />
+    <ClInclude Include="physics_system.hpp" />
+    <ClInclude Include="system.hpp" />
+    <ClInclude Include="types.hpp" />
+    <ClInclude Include="component_manager.hpp" />
+    <ClInclude Include="simple_render_system.hpp" />
+    <ClInclude Include="component_array.hpp" />
     <ClInclude Include="vmc_device.hpp" />
+    <ClInclude Include="system_manager.hpp" />
     <ClInclude Include="vmc_model.hpp" />
     <ClInclude Include="vmc_pipeline.hpp" />
+    <ClInclude Include="vmc_renderer.hpp" />
     <ClInclude Include="vmc_swap_chain.hpp" />
     <ClInclude Include="vmc_window.hpp" />
   </ItemGroup>

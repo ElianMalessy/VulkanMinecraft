@@ -1,35 +1,37 @@
 #include "vmc_model.hpp"
 
+#include <vma/vk_mem_alloc.h>
+
 #include <cassert>
 #include <cstring>
+#include <iostream>
+
 namespace vmc {
 	VmcModel::VmcModel(VmcDevice& device, const std::vector<Vertex>& vertices) : vmcDevice{ device } {
 		createVertexBuffers(vertices);
 	}
 	VmcModel::~VmcModel() {
-		vkDestroyBuffer(vmcDevice.device(), vertexBuffer, nullptr);
-		vkFreeMemory(vmcDevice.device(), vertexBufferMemory, nullptr);
+
+		vmaDestroyBuffer(vmcDevice.vmaAllocator, vertexBuffer, vertexMemory);
 	}
 	void VmcModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
 		vertexCount = static_cast<uint32_t>(vertices.size());
 		assert(vertexCount >= 3 && "Vertex count must be at least 3");
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
-		vmcDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory);
-		
+		vmcDevice.createDeviceBuffer(bufferSize, (void*)vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &vertexBuffer, &vertexMemory);
+
 		// Host = CPU, Device = GPU
-		// Host_Visible_Bit makes gpu memory accessible to the Host (CPU)
-		// Host_Coherent_Bit updates the gpu memory with our cpu memory which we allocate right now with void* data
 		void* data;
-		vkMapMemory(vmcDevice.device(), vertexBufferMemory, 0, bufferSize, 0, &data);
+		vmaMapMemory(vmcDevice.vmaAllocator, vertexMemory, &data);
 		memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-		vkUnmapMemory(vmcDevice.device(), vertexBufferMemory);
+		vmaUnmapMemory(vmcDevice.vmaAllocator, vertexMemory);
 	}
 	void VmcModel::draw(VkCommandBuffer commandBuffer) {
 		vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
 	}
 	void VmcModel::bind(VkCommandBuffer commandBuffer) {
 		VkBuffer buffers[] = { vertexBuffer };
-		VkDeviceSize offsets[] = {0};
+		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 	}
 	std::vector<VkVertexInputBindingDescription> VmcModel::Vertex::getBindingDescriptions() {
@@ -52,6 +54,7 @@ namespace vmc {
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
+
 		return attributeDescriptions;
 	}
 }

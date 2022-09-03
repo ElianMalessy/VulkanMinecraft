@@ -5,7 +5,7 @@
 #include <iostream>
 #include <set>
 #include <unordered_set>
-
+#include <cassert>
 namespace vmc {
 
 	// local callback functions
@@ -54,11 +54,14 @@ namespace vmc {
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+		createAllocator();
 		createCommandPool();
 	}
 
 	VmcDevice::~VmcDevice() {
 		vkDestroyCommandPool(device_, commandPool, nullptr);
+
+		vmaDestroyAllocator(vmaAllocator);
 		vkDestroyDevice(device_, nullptr);
 
 		if (enableValidationLayers) {
@@ -77,10 +80,10 @@ namespace vmc {
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "LittleVulkanEngine App";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 3, 0);
 		appInfo.pEngineName = "No Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.engineVersion = VK_MAKE_VERSION(1, 3, 0);
+		appInfo.apiVersion = VK_API_VERSION_1_3;
 
 		VkInstanceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -180,6 +183,17 @@ namespace vmc {
 
 		vkGetDeviceQueue(device_, indices.graphicsFamily, 0, &graphicsQueue_);
 		vkGetDeviceQueue(device_, indices.presentFamily, 0, &presentQueue_);
+	}
+
+	void VmcDevice::createAllocator() {
+		VmaAllocatorCreateInfo allocatorInfo{};
+		allocatorInfo.flags = VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT,
+			allocatorInfo.physicalDevice = physicalDevice,
+			allocatorInfo.device = device_,
+			allocatorInfo.instance = instance,
+			allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3,
+
+			vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 	}
 
 	void VmcDevice::createCommandPool() {
@@ -407,35 +421,26 @@ namespace vmc {
 		throw std::runtime_error("failed to find suitable memory type!");
 	}
 
-	void VmcDevice::createBuffer(
-		VkDeviceSize size,
-		VkBufferUsageFlags usage,
-		VkMemoryPropertyFlags properties,
-		VkBuffer& buffer,
-		VkDeviceMemory& bufferMemory) {
+
+	void VmcDevice::createDeviceBuffer(VkDeviceSize size, void* src, VkBufferUsageFlags usage, VkBuffer* buffer, VmaAllocation* bufferMemory) {
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = size;
-		bufferInfo.usage = usage;
+		bufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+
+		if (vmaCreateBuffer(vmaAllocator, &bufferInfo, &allocInfo, buffer, bufferMemory, nullptr) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create vertex buffer!");
 		}
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate vertex buffer memory!");
-		}
-
-		vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+		void* data;
+		vmaMapMemory(vmaAllocator, *bufferMemory, &data);
+		memcpy(data, src, static_cast<size_t>(size));
+		vmaUnmapMemory(vmaAllocator, *bufferMemory);
 	}
 
 	VkCommandBuffer VmcDevice::beginSingleTimeCommands() {

@@ -20,6 +20,7 @@ namespace vmc {
 		};
 
 		VmcModel(VmcDevice& device, const std::vector<Vertex>& vertices);
+		VmcModel() = default;
 		~VmcModel();
 
 		VmcModel(const VmcModel&) = delete;
@@ -28,6 +29,7 @@ namespace vmc {
 		void bind(VkCommandBuffer commandBuffer);
 		void draw(VkCommandBuffer commandBuffer);
 
+
 	private:
 		void createVertexBuffers(const std::vector<Vertex>& vertices);
 
@@ -35,5 +37,6 @@ namespace vmc {
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		uint32_t vertexCount;
+		VmaAllocation vertexMemory;
 	};
 }

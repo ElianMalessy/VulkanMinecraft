@@ -8,7 +8,7 @@
 namespace vmc {
 	class VmcWindow {
 	public:
-		VmcWindow(uint16_t w, uint16_t h, std::string name, void (*windowRefreshCallback)(GLFWwindow* window));
+		VmcWindow(uint16_t w, uint16_t h, std::string name);
 		~VmcWindow();
 
 		// delete copy and assignment constructors to prevent dangling pointers (RAII)

@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 namespace vmc {
-	VmcWindow::VmcWindow(uint16_t w, uint16_t h, std::string name, void (*windowCallback)(GLFWwindow* window)) : width{ w }, height{ h }, windowName{ name }, windowRefreshCallback{ windowCallback } {
+	VmcWindow::VmcWindow(uint16_t w, uint16_t h, std::string name) : width{ w }, height{ h }, windowName{ name } {
 		initWindow();
 	}
 
@@ -20,7 +20,7 @@ namespace vmc {
 		window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
 		glfwSetWindowUserPointer(window, this);
 		glfwSetFramebufferSizeCallback(window, frameBufferResizedCallback);
-		glfwSetWindowRefreshCallback(window, windowRefreshCallback);
+		//glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 	}
 
 	void VmcWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* surface) {
