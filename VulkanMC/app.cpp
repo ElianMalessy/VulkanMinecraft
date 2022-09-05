@@ -11,6 +11,9 @@
 
 #include <stdexcept>
 #include <chrono>
+#include <thread>
+#include <mutex>
+
 namespace vmc {
 	App::App() {
 		loadGameObjects();
@@ -18,26 +21,24 @@ namespace vmc {
 
 	App::~App() { }
 
-
 	void App::run() {
 		SimpleRenderSystem simpleRenderSystem{ vmcDevice, vmcRenderer.getSwapChainRenderPass() };
 
 		float dt = 0.0f;
+		auto startTime = std::chrono::steady_clock::now();
 
 		while (!vmcWindow.shouldClose()) {
 			glfwPollEvents();
+
+			auto stopTime = std::chrono::steady_clock::now();
+			dt = std::chrono::duration_cast<std::chrono::duration<float>>(stopTime - startTime).count();
+			startTime = std::chrono::steady_clock::now();
+			physicsSystem->Update<Circle, Rect>(dt, registry);
+
 			// the beginFrame function returns a nullptr if the swapchain needs to be recreated
-			auto startTime = std::chrono::high_resolution_clock::now();
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-			physicsSystem->Update(dt, gCoordinator);
-
-			auto stopTime = std::chrono::high_resolution_clock::now();
-
-			dt = std::chrono::duration<float, std::chrono::seconds::period>(stopTime - startTime).count();
 			if (auto commandbuffer = vmcRenderer.beginFrame()) {
 				vmcRenderer.beginSwapChainRenderPass(commandbuffer);
-				simpleRenderSystem.renderEntities(commandbuffer, entities, gCoordinator);
+				simpleRenderSystem.renderEntities<Circle, Rect>(commandbuffer, registry);
 				vmcRenderer.endSwapChainRenderPass(commandbuffer);
 				vmcRenderer.endFrame();
 			}
@@ -52,40 +53,48 @@ namespace vmc {
 	//}
 
 
-
 	void App::loadGameObjects() {
-		gCoordinator.RegisterComponent<Gravity>();
-		gCoordinator.RegisterComponent<Circle>();
-		gCoordinator.RegisterComponent<Transform>();
-
-		physicsSystem = gCoordinator.RegisterSystem<PhysicsSystem>();
-		Signature signature;
-		signature.set(gCoordinator.GetComponentType<Gravity>());
-		signature.set(gCoordinator.GetComponentType<Circle>());
-		signature.set(gCoordinator.GetComponentType<Transform>());
-		gCoordinator.SetSystemSignature<PhysicsSystem>(signature);
-
-		auto blueEntity = gCoordinator.CreateEntity();
-		auto redEntity = gCoordinator.CreateEntity();
-
 		constexpr float r = 0.2f;
 		constexpr size_t size = 64;
 
-		Circle blueCircle(vmcDevice, size, r);
-		blueCircle.color = { .1f, .1f, .8f };
+		Circle blueCircle = Circle(vmcDevice, size, r);
+		blueCircle.velocity.x = 0.25f;
+		blueCircle.color = { .1f, .1f, .9f };
 
-		Circle redCircle(vmcDevice, size, r);
+		Circle redCircle = Circle(vmcDevice, size, r);
+		redCircle.velocity = { -0.1f, 0.1f };
 		redCircle.color = { .8f, .1f, .1f };
 
-		gCoordinator.AddComponent(blueEntity, std::move(blueCircle));
-		gCoordinator.AddComponent(blueEntity, Gravity{});
-		gCoordinator.AddComponent(blueEntity, Transform{ glm::vec2(-0.5f, 0.0f) });
-		gCoordinator.AddComponent(redEntity, std::move(redCircle));
-		gCoordinator.AddComponent(redEntity, Gravity{});
-		gCoordinator.AddComponent(redEntity, Transform{ glm::vec2(0.5f, 0.0f) });
+		auto blueEntity = registry.create();
+		auto redEntity = registry.create();
 
-		entities.push_back(blueEntity);
-		entities.push_back(redEntity);
+		registry.emplace<Circle>(blueEntity, std::move(blueCircle));
+		registry.emplace<Gravity>(blueEntity);
+		registry.emplace<Transform>(blueEntity, glm::vec2(-0.5f, 0.0f));
+
+		registry.emplace<Circle>(redEntity, std::move(redCircle));
+		registry.emplace<Gravity>(redEntity);
+		registry.emplace<Transform>(redEntity, glm::vec2(0.5f, 0.25f));
+
+		registry.emplace<Rect>(blueEntity, Rect(vmcDevice, 0.01f, 0.15f, { .25f, .0f }, 0.0f));
+		//registry.emplace<Transform>(blueEntity, glm::vec2(-0.5f, 0.0f));
+
+		registry.emplace<Rect>(redEntity, Rect(vmcDevice, 0.01f, 0.15f, { .25f, .0f }, 0.0f));
+		//registry.emplace<Transform>(redEntity, glm::vec2(-0.5f, 0.25f));
+
+		int gridCount = 40;
+		for (int i = 0; i < gridCount; i++) {
+			for (int j = 0; j < gridCount; j++) {
+				auto vfEntity = registry.create();
+				Rect vf = Rect(vmcDevice, 0.5f, 0.5f, { .5f, .0f }, 1.0f);
+				vf.color = { 1.0f, 1.0f, 1.0f };
+
+				registry.emplace<Rect>(vfEntity, std::move(vf));
+				registry.emplace<Transform>(vfEntity, glm::vec2(-1.0f + (i + 0.5f) * 2.0f / gridCount,
+					-1.0f + (j + 0.5f) * 2.0f / gridCount), glm::vec2(0.008f));
+				registry.emplace<Gravity>(vfEntity);
+			}
+		}
+
 	}
 }
-

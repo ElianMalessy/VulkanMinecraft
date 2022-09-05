@@ -16,9 +16,6 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{83640b19-d867-4eb7-a7e9-b1c6f5390061}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\ECS">
-      <UniqueIdentifier>{7eeb9569-9a07-452d-9714-fe3d8a0b116a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Utility">
       <UniqueIdentifier>{4022001c-a474-43cb-8ac6-de30cf8e2ee5}</UniqueIdentifier>
     </Filter>
@@ -79,24 +76,6 @@
     </ClInclude>
     <ClInclude Include="simple_render_system.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="component_array.hpp">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="component_manager.hpp">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="coordinator.hpp">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="entity_manager.hpp">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="system.hpp">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="system_manager.hpp">
-      <Filter>Header Files\ECS</Filter>
     </ClInclude>
     <ClInclude Include="types.hpp">
       <Filter>Header Files\Utility</Filter>

@@ -168,16 +168,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
-    <ClInclude Include="coordinator.hpp" />
-    <ClInclude Include="entity_manager.hpp" />
     <ClInclude Include="physics_system.hpp" />
-    <ClInclude Include="system.hpp" />
     <ClInclude Include="types.hpp" />
-    <ClInclude Include="component_manager.hpp" />
     <ClInclude Include="simple_render_system.hpp" />
-    <ClInclude Include="component_array.hpp" />
     <ClInclude Include="vmc_device.hpp" />
-    <ClInclude Include="system_manager.hpp" />
     <ClInclude Include="vmc_model.hpp" />
     <ClInclude Include="vmc_pipeline.hpp" />
     <ClInclude Include="vmc_renderer.hpp" />

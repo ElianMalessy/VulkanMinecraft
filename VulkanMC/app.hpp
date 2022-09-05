@@ -5,9 +5,7 @@
 #include "vmc_model.hpp"
 #include "vmc_renderer.hpp"
 #include "simple_render_system.hpp"
-#include "coordinator.hpp"
 #include "physics_system.hpp"
-
 // std
 #include <memory>
 #include <vector>
@@ -36,9 +34,7 @@ namespace vmc {
 
 		VmcDevice vmcDevice{ vmcWindow };
 		VmcRenderer vmcRenderer{ vmcWindow, vmcDevice };
-
-		Coordinator gCoordinator;
-		std::shared_ptr<PhysicsSystem> physicsSystem;
-		std::vector<Entity> entities;
+		entt::registry registry;
+		std::unique_ptr<PhysicsSystem> physicsSystem;
 	};
 }

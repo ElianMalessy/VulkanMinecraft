@@ -7,31 +7,28 @@
 
 // std
 #include <cstdint>
-#include <bitset>
 #include <memory>
+#include <iostream>
 
 namespace vmc {
-	constexpr unsigned int MAX_ENTITIES = 5000;
-	constexpr unsigned int MAX_COMPONENTS = 32;
-
-	using Entity = std::uint32_t;
-	using ComponentType = std::uint8_t;
-	using Signature = std::bitset<MAX_COMPONENTS>;
-
-
-	struct BasicObject
+	class BasicObject
 	{
+	public:
 		BasicObject() = default;
 		BasicObject(BasicObject&&) = default;
 		BasicObject& operator=(BasicObject&&) = default;
+		BasicObject(glm::vec2 v, glm::vec2 a, glm::vec3 c, float m) : velocity{ v }, acceleration{ a }, color{ c }, mass{ m } {}
 		glm::vec2 velocity{ 0.0f, 0.0f };
 		glm::vec2 acceleration{ 0.0f, 0.0f };
 		glm::vec3 color{ 0.0f, 0.0f, 0.0f };
 		float mass{ 1.0f };
 		std::unique_ptr<VmcModel> model;
+
 	};
 
 	struct Circle : BasicObject {
+		float radius{ 0.5f };
+
 		Circle() = default;
 		Circle(VmcDevice& device, size_t size, float r) {
 			std::vector<VmcModel::Vertex> uniqueVertices(size + 1);
@@ -48,12 +45,15 @@ namespace vmc {
 				vertices.push_back(uniqueVertices[size]);
 			}
 			this->model = std::make_unique<VmcModel>(device, std::move(vertices));
+			this->radius = r;
 		}
+
+
 	};
 
 	struct Rect : BasicObject {
-
-		Rect(VmcDevice& device, float l, float w) {
+		Rect() = default;
+		Rect(VmcDevice& device, float l, float w, glm::vec2 offset, float mass) {
 			std::vector<VmcModel::Vertex> vertices{
 				{{-w, l}},
 				{{-w, -l}},
@@ -62,13 +62,18 @@ namespace vmc {
 				{{-w, -l}},
 				{{w, -l}},
 			};
+			for (auto& v : vertices) {
+				v.position += offset;
+			}
 			this->model = std::make_unique<VmcModel>(device, std::move(vertices));
+			this->color = glm::vec3(1.0f);
+			this->mass = mass;
 		}
 	};
 
 	struct Gravity
 	{
-		glm::vec2 force{ 2.0f, 0.0f };
+		glm::vec2 force{ 0.0f, 0.0f };
 	};
 
 	struct Transform {
