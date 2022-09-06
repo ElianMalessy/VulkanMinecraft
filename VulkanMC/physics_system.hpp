@@ -7,31 +7,28 @@ namespace vmc {
 	class PhysicsSystem {
 	public:
 
-		template<typename T>
-		inline void elasticCollisionVelocity(entt::entity entity1, entt::entity entity2, entt::registry& registry) {
-			auto& obj1 = registry.get<T>(entity1);
-			auto& obj2 = registry.get<T>(entity2);
-
-			obj1.velocity = (obj1.velocity * (obj1.mass - obj2.mass) / (obj1.mass + obj2.mass)) + (obj2.velocity * (2 * obj2.mass) / (obj1.mass + obj2.mass));
-			obj2.velocity = (obj2.velocity * (obj1.mass - obj2.mass) / (obj1.mass + obj2.mass)) + (-obj1.velocity * (2 * obj2.mass) / (obj1.mass + obj2.mass));
-
+		inline void elasticCollisionVelocity(glm::vec2& v1, glm::vec2& v2, float m1, float m2) {
+			auto temp = std::move(v1);
+			v1 = (v1 * (m1 - m2) / (m1 + m2)) + (v2 * (2 * m2) / (m1 + m2));
+			v2 = (v2 * (m1 - m2) / (m1 + m2)) + (temp * (2 * m2) / (m1 + m2));
 		}
-		template<typename T>
-		inline void wallCollisionVelocity(entt::entity entity, entt::registry& registry, glm::vec2 normal) {
-			auto& obj = registry.get<T>(entity);
-			obj.velocity -= 2.0f * normal * glm::dot(normal, obj.velocity);
+		inline void wallCollisionVelocity(glm::vec2& v, glm::vec2 normal) {
+			v -= 2.0f * normal * glm::dot(normal, v);
 		}
 
-		template<typename Args>
+		template<typename... Args>
 		void update(float dt, entt::registry& registry, unsigned int substeps = 1)
 		{
 			const float stepDelta = dt / substeps;
-
-			for (unsigned int i = 0; i < substeps; i++)
-			{
-				stepSimulation<Circle>(stepDelta, registry);
-			}
+			([&]
+				{
+					for (unsigned int i = 0; i < substeps; i++)
+					{
+						stepSimulation<Args>(stepDelta, registry);
+					}
+				} (), ...);
 		}
+
 		template <typename T>
 		void vfUpdate(entt::registry& registry) {
 			auto vfobj = registry.view<Rect, Transform, Gravity>();
@@ -70,33 +67,33 @@ namespace vmc {
 		{
 			bool hasCollided = false;
 			auto view = registry.view<T, Transform, Gravity>();
-			for (auto& entityA : view)
+			for (auto& entity1 : view)
 			{
-				auto [objA, transformA, gravityA] = registry.get<T, Transform, Gravity>(entityA);
+				auto [obj1, transform1, gravity1] = registry.get<T, Transform, Gravity>(entity1);
 
-				for (auto& entityB : view)
+				for (auto& entity2 : view)
 				{
-					if (entityA == entityB)
+					if (entity1 == entity2)
 						continue;
 
-					auto [objB, transformB, gravityB] = registry.get<T, Transform, Gravity>(entityB);
+					auto [obj2, transform2, gravity2] = registry.get<T, Transform, Gravity>(entity2);
 
-					auto distance = transformA.translation - transformB.translation;
-					auto force = calculateGravity(distance, objA.mass, objB.mass);
-					objA.velocity += dt * -force / objA.mass;
-					objB.velocity += dt * force / objB.mass;
-					if (typeid(T).name() == typeid(Circle).name() && glm::length(distance) <= glm::abs(objA.radius + objB.radius) && hasCollided == false) {
-						elasticCollisionVelocity<Circle>(entityA, entityB, registry);
+					auto distance = transform1.translation - transform2.translation;
+					auto force = calculateGravity(distance, obj1.mass, obj2.mass);
+					obj1.velocity += dt * -force / obj1.mass;
+					obj2.velocity += dt * force / obj2.mass;
+					if (typeid(T).name() == typeid(Circle).name() && glm::length(distance) <= glm::abs(obj1.radius + obj2.radius) && hasCollided == false) {
+						elasticCollisionVelocity(obj1.velocity, obj2.velocity, obj1.mass, obj2.mass);
 						hasCollided = true;
 					}
 
 				}
 				if (typeid(T).name() == typeid(Circle).name()) {
-					if (glm::abs(transformA.translation.x) + objA.radius >= 1.0f) {
-						wallCollisionVelocity<Circle>(entityA, registry, glm::vec2{ transformA.translation.x < 0 ? 1.0f : -1.0f, 0.0f });
+					if (glm::abs(transform1.translation.x) + obj1.radius >= 1.0f) {
+						wallCollisionVelocity(obj1.velocity, glm::vec2{ transform1.translation.x < 0 ? 1.0f : -1.0f, 0.0f });
 					}
-					if (glm::abs(transformA.translation.y) + objA.radius >= 1.0f) {
-						wallCollisionVelocity<Circle>(entityA, registry, glm::vec2{ 0.0f, transformA.translation.y < 0 ? 1.0f : -1.0f });
+					if (glm::abs(transform1.translation.y) + obj1.radius >= 1.0f) {
+						wallCollisionVelocity(obj1.velocity, glm::vec2{ 0.0f, transform1.translation.y < 0 ? 1.0f : -1.0f });
 					}
 				}
 

@@ -43,7 +43,7 @@ namespace vmc {
 				vmcRenderer.endSwapChainRenderPass(commandbuffer);
 				vmcRenderer.endFrame();
 			}
-			auto et = std::chrono::steady_clock::now();
+			//auto et = std::chrono::steady_clock::now();
 			//std::cout << 1 / std::chrono::duration_cast<std::chrono::duration<float>>(et - stopTime).count() << " ";
 
 		}
