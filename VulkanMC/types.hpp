@@ -22,7 +22,7 @@ namespace vmc {
 		glm::vec2 acceleration{ 0.0f, 0.0f };
 		glm::vec3 color{ 0.0f, 0.0f, 0.0f };
 		float mass{ 1.0f };
-		std::unique_ptr<VmcModel> model;
+		std::shared_ptr<VmcModel> model;
 
 	};
 
@@ -52,7 +52,9 @@ namespace vmc {
 	};
 
 	struct Rect : BasicObject {
+		glm::vec3 color = glm::vec3(1.0f);
 		Rect() = default;
+		/*
 		Rect(VmcDevice& device, float l, float w, glm::vec2 offset, float mass) {
 			std::vector<VmcModel::Vertex> vertices{
 				{{-w, l}},
@@ -66,9 +68,9 @@ namespace vmc {
 				v.position += offset;
 			}
 			this->model = std::make_unique<VmcModel>(device, std::move(vertices));
-			this->color = glm::vec3(1.0f);
 			this->mass = mass;
 		}
+		*/
 	};
 
 	struct Gravity

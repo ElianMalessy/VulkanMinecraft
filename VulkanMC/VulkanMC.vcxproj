@@ -172,6 +172,7 @@
     <ClInclude Include="types.hpp" />
     <ClInclude Include="simple_render_system.hpp" />
     <ClInclude Include="vmc_device.hpp" />
+    <ClInclude Include="vmc_game_object.hpp" />
     <ClInclude Include="vmc_model.hpp" />
     <ClInclude Include="vmc_pipeline.hpp" />
     <ClInclude Include="vmc_renderer.hpp" />

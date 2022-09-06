@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include <chrono>
 #include <thread>
-#include <mutex>
 
 namespace vmc {
 	App::App() {
@@ -33,7 +32,9 @@ namespace vmc {
 			auto stopTime = std::chrono::steady_clock::now();
 			dt = std::chrono::duration_cast<std::chrono::duration<float>>(stopTime - startTime).count();
 			startTime = std::chrono::steady_clock::now();
-			physicsSystem->Update<Circle, Rect>(dt, registry);
+
+			physicsSystem->update<Circle>(1.f / 60, registry, 5);
+			physicsSystem->vfUpdate<Circle>(registry);
 
 			// the beginFrame function returns a nullptr if the swapchain needs to be recreated
 			if (auto commandbuffer = vmcRenderer.beginFrame()) {
@@ -42,6 +43,9 @@ namespace vmc {
 				vmcRenderer.endSwapChainRenderPass(commandbuffer);
 				vmcRenderer.endFrame();
 			}
+			auto et = std::chrono::steady_clock::now();
+			//std::cout << 1 / std::chrono::duration_cast<std::chrono::duration<float>>(et - stopTime).count() << " ";
+
 		}
 		// cpu will wait until all gpu operations have been completed
 		vkDeviceWaitIdle(vmcDevice.device());
@@ -52,6 +56,20 @@ namespace vmc {
 		//app->render();
 	//}
 
+	std::unique_ptr<VmcModel> createSquareModel(VmcDevice& device, glm::vec2 offset) {
+		std::vector<VmcModel::Vertex> vertices = {
+				{{-0.5f, -0.5f}},
+				{{0.5f, 0.5f}},
+				{{-0.5f, 0.5f}},
+				{{-0.5f, -0.5f}},
+				{{0.5f, -0.5f}},
+				{{0.5f, 0.5f}},  //
+		};
+		for (auto& v : vertices) {
+			v.position += offset;
+		}
+		return std::make_unique<VmcModel>(device, vertices);
+	}
 
 	void App::loadGameObjects() {
 		constexpr float r = 0.2f;
@@ -76,17 +94,14 @@ namespace vmc {
 		registry.emplace<Gravity>(redEntity);
 		registry.emplace<Transform>(redEntity, glm::vec2(0.5f, 0.25f));
 
-		registry.emplace<Rect>(blueEntity, Rect(vmcDevice, 0.01f, 0.15f, { .25f, .0f }, 0.0f));
-		//registry.emplace<Transform>(blueEntity, glm::vec2(-0.5f, 0.0f));
-
-		registry.emplace<Rect>(redEntity, Rect(vmcDevice, 0.01f, 0.15f, { .25f, .0f }, 0.0f));
-		//registry.emplace<Transform>(redEntity, glm::vec2(-0.5f, 0.25f));
 
 		int gridCount = 40;
+		std::shared_ptr<VmcModel> sqModel = createSquareModel(vmcDevice, { .5f, .0f });
 		for (int i = 0; i < gridCount; i++) {
 			for (int j = 0; j < gridCount; j++) {
 				auto vfEntity = registry.create();
-				Rect vf = Rect(vmcDevice, 0.5f, 0.5f, { .5f, .0f }, 1.0f);
+				Rect vf{};
+				vf.model = sqModel;
 				vf.color = { 1.0f, 1.0f, 1.0f };
 
 				registry.emplace<Rect>(vfEntity, std::move(vf));
