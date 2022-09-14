@@ -46,7 +46,7 @@ namespace vmc {
 		// binding is which buffer you use, location is the location of the specific data in the buffer ( layout(location=0) )
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[0].offset = offsetof(Vertex, position);
 
 		// color

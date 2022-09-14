@@ -33,13 +33,13 @@ namespace vmc {
 			dt = std::chrono::duration_cast<std::chrono::duration<float>>(stopTime - startTime).count();
 			startTime = std::chrono::steady_clock::now();
 
-			physicsSystem->update<Circle>(1.f / 60, registry, 5);
-			physicsSystem->vfUpdate<Circle>(registry);
+			//physicsSystem->update<Circle>(1.f / 60, registry, 5);
+			//physicsSystem->vfUpdate<Circle>(registry);
 
 			// the beginFrame function returns a nullptr if the swapchain needs to be recreated
 			if (auto commandbuffer = vmcRenderer.beginFrame()) {
 				vmcRenderer.beginSwapChainRenderPass(commandbuffer);
-				simpleRenderSystem.renderEntities<Circle, Rect>(commandbuffer, registry);
+				simpleRenderSystem.renderEntities<Rect>(commandbuffer, registry);
 				vmcRenderer.endSwapChainRenderPass(commandbuffer);
 				vmcRenderer.endFrame();
 			}
@@ -56,60 +56,69 @@ namespace vmc {
 		//app->render();
 	//}
 
-	std::unique_ptr<VmcModel> createSquareModel(VmcDevice& device, glm::vec2 offset) {
-		std::vector<VmcModel::Vertex> vertices = {
-				{{-0.5f, -0.5f}},
-				{{0.5f, 0.5f}},
-				{{-0.5f, 0.5f}},
-				{{-0.5f, -0.5f}},
-				{{0.5f, -0.5f}},
-				{{0.5f, 0.5f}},  //
+	std::unique_ptr<VmcModel> createCubeModel(VmcDevice& device, glm::vec3 offset) {
+		std::vector<VmcModel::Vertex> vertices{
+
+			// left face (white)
+			{{-.5f, -.5f, -.5f}, {.9f, .9f, .9f}},
+			{{-.5f, .5f, .5f}, {.9f, .9f, .9f}},
+			{{-.5f, -.5f, .5f}, {.9f, .9f, .9f}},
+			{{-.5f, -.5f, -.5f}, {.9f, .9f, .9f}},
+			{{-.5f, .5f, -.5f}, {.9f, .9f, .9f}},
+			{{-.5f, .5f, .5f}, {.9f, .9f, .9f}},
+
+			// right face (yellow)
+			{{.5f, -.5f, -.5f}, {.8f, .8f, .1f}},
+			{{.5f, .5f, .5f}, {.8f, .8f, .1f}},
+			{{.5f, -.5f, .5f}, {.8f, .8f, .1f}},
+			{{.5f, -.5f, -.5f}, {.8f, .8f, .1f}},
+			{{.5f, .5f, -.5f}, {.8f, .8f, .1f}},
+			{{.5f, .5f, .5f}, {.8f, .8f, .1f}},
+
+			// top face (orange, remember y axis points down)
+			{{-.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+			{{.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+			{{-.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+			{{-.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+			{{.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+			{{.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+
+			// bottom face (red)
+			{{-.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+			{{.5f, .5f, .5f}, {.8f, .1f, .1f}},
+			{{-.5f, .5f, .5f}, {.8f, .1f, .1f}},
+			{{-.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+			{{.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+			{{.5f, .5f, .5f}, {.8f, .1f, .1f}},
+
+			// nose face (blue)
+			{{-.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+			{{.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+			{{-.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+			{{-.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+			{{.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+			{{.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+
+			// tail face (green)
+			{{-.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+			{{.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+			{{-.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+			{{-.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+			{{.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+			{{.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+
 		};
 		for (auto& v : vertices) {
 			v.position += offset;
 		}
 		return std::make_unique<VmcModel>(device, vertices);
 	}
-
 	void App::loadGameObjects() {
-		constexpr float r = 0.2f;
-		constexpr size_t size = 64;
-
-		Circle blueCircle = Circle(vmcDevice, size, r);
-		blueCircle.velocity.x = 0.25f;
-		blueCircle.color = { .1f, .1f, .9f };
-
-		Circle redCircle = Circle(vmcDevice, size, r);
-		redCircle.velocity = { -0.1f, 0.1f };
-		redCircle.color = { .8f, .1f, .1f };
-
-		auto blueEntity = registry.create();
-		auto redEntity = registry.create();
-
-		registry.emplace<Circle>(blueEntity, std::move(blueCircle));
-		registry.emplace<Gravity>(blueEntity);
-		registry.emplace<Transform>(blueEntity, glm::vec2(-0.5f, 0.0f));
-
-		registry.emplace<Circle>(redEntity, std::move(redCircle));
-		registry.emplace<Gravity>(redEntity);
-		registry.emplace<Transform>(redEntity, glm::vec2(0.5f, 0.25f));
-
-
-		int gridCount = 40;
-		std::shared_ptr<VmcModel> sqModel = createSquareModel(vmcDevice, { .5f, .0f });
-		for (int i = 0; i < gridCount; i++) {
-			for (int j = 0; j < gridCount; j++) {
-				auto vfEntity = registry.create();
-				Rect vf{};
-				vf.model = sqModel;
-				vf.color = { 1.0f, 1.0f, 1.0f };
-
-				registry.emplace<Rect>(vfEntity, std::move(vf));
-				registry.emplace<Transform>(vfEntity, glm::vec2(-1.0f + (i + 0.5f) * 2.0f / gridCount,
-					-1.0f + (j + 0.5f) * 2.0f / gridCount), glm::vec2(0.008f));
-				registry.emplace<Gravity>(vfEntity);
-			}
-		}
-
+		std::unique_ptr<VmcModel> cubeModel = createCubeModel(vmcDevice, { .0f, .0f, .0f });
+		auto cubeEntity = registry.create();
+		Rect r;
+		r.model = std::move(cubeModel);
+		registry.emplace<Rect>(cubeEntity, std::move(r));
+		registry.emplace<Transform>(cubeEntity, Transform{ {.0f, .0f, .5f}, {.25f, .25f, .25f} });
 	}
 }

@@ -33,7 +33,6 @@ namespace vmc {
 		void vfUpdate(entt::registry& registry) {
 			auto vfobj = registry.view<Rect, Transform, Gravity>();
 			auto physicsObjs = registry.view<T, Transform, Gravity>();
-
 			for (auto& vf : vfobj) {
 				glm::vec2 direction{};
 				auto& transformVf = registry.get<Transform>(vf);
@@ -66,12 +65,12 @@ namespace vmc {
 		void stepSimulation(float dt, entt::registry& registry)
 		{
 			bool hasCollided = false;
-			auto view = registry.view<T, Transform, Gravity>();
-			for (auto& entity1 : view)
+			auto physicsObjs = registry.view<T, Transform, Gravity>();
+			for (auto& entity1 : physicsObjs)
 			{
 				auto [obj1, transform1, gravity1] = registry.get<T, Transform, Gravity>(entity1);
 
-				for (auto& entity2 : view)
+				for (auto& entity2 : physicsObjs)
 				{
 					if (entity1 == entity2)
 						continue;
@@ -99,7 +98,7 @@ namespace vmc {
 
 			}
 			// update each objects position based on its final velocity	
-			for (auto& entity : view)
+			for (auto& entity : physicsObjs)
 			{
 				auto [obj, transform] = registry.get<T, Transform>(entity);
 				transform.translation += dt * obj.velocity;

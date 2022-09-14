@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 // std
 #include <cstdint>
@@ -28,29 +30,9 @@ namespace vmc {
 
 	struct Circle : BasicObject {
 		float radius{ 0.5f };
-
 		Circle() = default;
-		Circle(VmcDevice& device, size_t size, float r) {
-			std::vector<VmcModel::Vertex> uniqueVertices(size + 1);
-			for (int i = 0; i < size; i++) {
-				float angle = i * glm::two_pi<float>() / size;
-				uniqueVertices[i].position = { r * glm::cos(angle), r * glm::sin(angle) };
-			}
-			uniqueVertices[size].position = { 0, 0 };
-
-			std::vector<VmcModel::Vertex> vertices;
-			for (int i = 0; i < size; i++) {
-				vertices.push_back(uniqueVertices[i]);
-				vertices.push_back(uniqueVertices[(i + 1) % size]);
-				vertices.push_back(uniqueVertices[size]);
-			}
-			this->model = std::make_unique<VmcModel>(device, std::move(vertices));
-			this->radius = r;
-		}
-
 
 	};
-
 	struct Rect : BasicObject {
 		glm::vec3 color = glm::vec3(1.0f);
 		Rect() = default;
@@ -79,17 +61,20 @@ namespace vmc {
 	};
 
 	struct Transform {
-		glm::vec2 translation{};  // (position offset)
-		glm::vec2 scale{ 1.f, 1.f };
-		float rotation;
+		glm::vec3 translation{};  // (position offset)
+		glm::vec3 scale{ 1.f, 1.f, 1.f };
+		glm::vec3 rotation{};
 
-		glm::mat2 mat2() {
-			const float s = glm::sin(rotation);
-			const float c = glm::cos(rotation);
-			glm::mat2 rotMatrix{ {c, s}, {-s, c} };
 
-			glm::mat2 scaleMat{ {scale.x, .0f}, {.0f, scale.y} };
-			return rotMatrix * scaleMat;
+		// quaternion
+		float deg = 1.f;
+		glm::mat4 getModelMatrix(float offset)
+		{
+			deg += offset;
+			glm::mat4 t = glm::translate(glm::mat4{ 1.f }, translation);
+			glm::mat4 r = glm::toMat4(glm::quat{ glm::cos(deg), 0, glm::sin(deg), 0 });
+			glm::mat4 s = glm::scale(glm::mat4{ 1.f }, scale);
+			return t * r * s;
 		}
 	};
 
