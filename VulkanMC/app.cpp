@@ -119,6 +119,6 @@ namespace vmc {
 		Rect r;
 		r.model = std::move(cubeModel);
 		registry.emplace<Rect>(cubeEntity, std::move(r));
-		registry.emplace<Transform>(cubeEntity, Transform{ {.0f, .0f, 1.f}, .5f });
+		registry.emplace<Transform>(cubeEntity, Transform{ {.0f, .0f, 0.5f}, .25f });
 	}
 }

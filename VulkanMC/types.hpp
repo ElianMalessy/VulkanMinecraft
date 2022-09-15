@@ -70,7 +70,8 @@ namespace vmc {
 		{
 			deg += offset;
 			// q = [cos(Q/2), sin(Q/2)v] (where Q is an angle and v is an axis)
-			return glm::vec4{ glm::cos(deg), glm::sin(deg) * -glm::sqrt(2.f) / 2.f, glm::sin(deg) * -glm::sqrt(2.f) / 2.f, 0.f };
+			// in this case its y, x, z, w (don't know why y and x are swapped)
+			return glm::vec4{ glm::sin(deg) * sqrt(2.f) / 2.f, glm::sin(deg) * sqrt(2.f) / 2.f, 0.f, glm::cos(deg) };
 		}
 	};
 
