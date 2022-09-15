@@ -3,6 +3,8 @@
 #include "vmc_pipeline.hpp"
 #include "vmc_device.hpp"
 #include "vmc_model.hpp"
+#include "vmc_camera.hpp"
+
 #include "types.hpp"
 #include <entt/entt.hpp>
 // std
@@ -12,9 +14,10 @@
 
 namespace vmc {
 	struct simplePushConstantData {
-		glm::vec4 quaternion{ 1.f };
-		alignas(16) glm::vec4 translate;
-		glm::vec3 color;
+		glm::vec4 quaternion{};
+		alignas(16) glm::vec4 translate{};
+		alignas(16) glm::mat4 projectionMatrix{};
+		glm::vec3 color{};
 	};
 	class SimpleRenderSystem {
 	public:
@@ -25,7 +28,7 @@ namespace vmc {
 		SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
 		template<typename... Args>
-		void renderEntities(VkCommandBuffer& commandBuffer, entt::registry& registry) {
+		void renderEntities(VkCommandBuffer& commandBuffer, entt::registry& registry, const VmcCamera& camera) {
 			vmcPipeline->bind(commandBuffer);
 			([&]
 				{
@@ -39,6 +42,7 @@ namespace vmc {
 						push.color = obj.color;
 						push.quaternion = transform.getQuaternion(0.01f);
 						push.translate = transform.translation;
+						push.projectionMatrix = camera.getProjectionMatrix();
 
 						vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(simplePushConstantData), &push);
 						obj.model->bind(commandBuffer);

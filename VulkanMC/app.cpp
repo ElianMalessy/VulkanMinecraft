@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "simple_render_system.hpp"
+#include "vmc_camera.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -22,24 +23,23 @@ namespace vmc {
 
 	void App::run() {
 		SimpleRenderSystem simpleRenderSystem{ vmcDevice, vmcRenderer.getSwapChainRenderPass() };
-
-		float dt = 0.0f;
-		auto startTime = std::chrono::steady_clock::now();
+		VmcCamera camera{};
+		//float dt = 0.0f;
+		//auto startTime = std::chrono::steady_clock::now();
 
 		while (!vmcWindow.shouldClose()) {
 			glfwPollEvents();
-
-			auto stopTime = std::chrono::steady_clock::now();
-			dt = std::chrono::duration_cast<std::chrono::duration<float>>(stopTime - startTime).count();
-			startTime = std::chrono::steady_clock::now();
-
-			//physicsSystem->update<Circle>(1.f / 60, registry, 5);
-			//physicsSystem->vfUpdate<Circle>(registry);
+			float aspect = vmcRenderer.getAspectRatio();
+			//camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
+			camera.setPerspectiveProjection(glm::radians(50.f), aspect, 0.1f, 10.f);
+			//auto stopTime = std::chrono::steady_clock::now();
+			//dt = std::chrono::duration_cast<std::chrono::duration<float>>(stopTime - startTime).count();
+			//startTime = std::chrono::steady_clock::now();
 
 			// the beginFrame function returns a nullptr if the swapchain needs to be recreated
 			if (auto commandbuffer = vmcRenderer.beginFrame()) {
 				vmcRenderer.beginSwapChainRenderPass(commandbuffer);
-				simpleRenderSystem.renderEntities<Rect>(commandbuffer, registry);
+				simpleRenderSystem.renderEntities<Rect>(commandbuffer, registry, camera);
 				vmcRenderer.endSwapChainRenderPass(commandbuffer);
 				vmcRenderer.endFrame();
 			}
@@ -119,6 +119,6 @@ namespace vmc {
 		Rect r;
 		r.model = std::move(cubeModel);
 		registry.emplace<Rect>(cubeEntity, std::move(r));
-		registry.emplace<Transform>(cubeEntity, Transform{ {.0f, .0f, 0.5f, .25f } });
+		registry.emplace<Transform>(cubeEntity, Transform{ {.0f, .0f, 1.f, .25f } });
 	}
 }
