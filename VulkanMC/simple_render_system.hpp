@@ -13,9 +13,8 @@
 namespace vmc {
 	struct simplePushConstantData {
 		glm::vec4 quaternion{ 1.f };
-		alignas(16) glm::vec3 color;
-		alignas(16) glm::vec3 translate;
-		float scale;
+		alignas(16) glm::vec4 translate;
+		glm::vec3 color;
 	};
 	class SimpleRenderSystem {
 	public:
@@ -40,8 +39,6 @@ namespace vmc {
 						push.color = obj.color;
 						push.quaternion = transform.getQuaternion(0.01f);
 						push.translate = transform.translation;
-						push.scale = transform.scale;
-
 
 						vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(simplePushConstantData), &push);
 						obj.model->bind(commandBuffer);
