@@ -62,19 +62,15 @@ namespace vmc {
 
 	struct Transform {
 		glm::vec3 translation{};  // (position offset)
-		glm::vec3 scale{ 1.f, 1.f, 1.f };
-		glm::vec3 rotation{};
-
+		float scale;
 
 		// quaternion
-		float deg = 1.f;
-		glm::mat4 getModelMatrix(float offset)
+		float deg = 0.f;
+		glm::vec4 getQuaternion(float offset)
 		{
 			deg += offset;
-			glm::mat4 t = glm::translate(glm::mat4{ 1.f }, translation);
-			glm::mat4 r = glm::toMat4(glm::quat{ glm::cos(deg), 0, glm::sin(deg), 0 });
-			glm::mat4 s = glm::scale(glm::mat4{ 1.f }, scale);
-			return t * r * s;
+			// q = [cos(Q/2), sin(Q/2)v] (where Q is an angle and v is an axis)
+			return glm::vec4{ glm::cos(deg), glm::sin(deg) * -glm::sqrt(2.f) / 2.f, glm::sin(deg) * -glm::sqrt(2.f) / 2.f, 0.f };
 		}
 	};
 

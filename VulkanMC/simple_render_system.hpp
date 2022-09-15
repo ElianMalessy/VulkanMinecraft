@@ -12,8 +12,10 @@
 
 namespace vmc {
 	struct simplePushConstantData {
-		glm::mat4 transform{ 1.f }; // 2x2 identity matrix
+		glm::vec4 quaternion{ 1.f };
 		alignas(16) glm::vec3 color;
+		alignas(16) glm::vec3 translate;
+		float scale;
 	};
 	class SimpleRenderSystem {
 	public:
@@ -34,10 +36,12 @@ namespace vmc {
 						auto& obj = views.get<Args>(entity);
 						auto& transform = views.get<Transform>(entity);
 						//auto const& gravity = views.get<Gravity>(entity);
-						transform.rotation.y = glm::mod(transform.rotation.y + 0.01f, glm::two_pi<float>());
 						simplePushConstantData push{};
 						push.color = obj.color;
-						push.transform = transform.getModelMatrix(0.01f);
+						push.quaternion = transform.getQuaternion(0.01f);
+						push.translate = transform.translation;
+						push.scale = transform.scale;
+
 
 						vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(simplePushConstantData), &push);
 						obj.model->bind(commandBuffer);
